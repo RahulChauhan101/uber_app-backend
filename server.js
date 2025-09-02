@@ -1,16 +1,9 @@
-// server.js
-// server.js
-// server.js
-// server.js
+require("dotenv").config();
+const mongoose = require("mongoose");
 
-
-const http = require('http');
-const app = require("./app");
-const  port = process.env.PORT || 3000;
-
-const server = http.createServer(app);
-
-
-server.listen(port,() => {
-    console.log(`server is runnig on port ${port}`);
-});
+mongoose.connect(process.env.DB_CONNECT, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ MongoDB connected"))
+.catch(err => console.error("❌ MongoDB connection error:", err));
