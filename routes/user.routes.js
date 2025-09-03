@@ -2,9 +2,12 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User"); // make sure you create this model
+const User = require("../models/User");
+const authUser = require("../middlewars/authUser");
 
-// @route   POST /api/users/register
+// ============================
+// REGISTER
+// ============================
 router.post("/register", async (req, res) => {
   try {
     const { fullname, email, password } = req.body;
@@ -31,12 +34,14 @@ router.post("/register", async (req, res) => {
     await newUser.save();
     res.json({ msg: "✅ User registered successfully" });
   } catch (err) {
-    console.error(err.message);
+    console.error("Register error:", err.message);
     res.status(500).send("Server error");
   }
 });
 
-// @route   POST /api/users/login
+// ============================
+// LOGIN
+// ============================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -58,23 +63,47 @@ router.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.json({ token, user: { id: user._id, fullname: user.fullname, email: user.email } });
+    res.json({
+      token,
+      user: { id: user._id, fullname: user.fullname, email: user.email },
+    });
   } catch (err) {
-    console.error(err.message);
+    console.error("Login error:", err.message);
     res.status(500).send("Server error");
   }
 });
 
+// ============================
+// GET ALL USERS
+// ============================
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // hide password
+    const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {
-    console.error(err.message);
+    console.error("Get users error:", err.message);
     res.status(500).send("Server error");
   }
 });
 
+// ============================
+// GET PROFILE (Protected)
+// ============================
+router.get("/profile", authUser, async (req, res) => {
+  try {
+    console.log("Decoded user from JWT:", req.user); // 👈 check this
+    const user = await User.findById(req.user.id).select("-password");
+    res.json(user);
+  } catch (err) {
+    console.error("Profile route error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ============================
+// GET USER BY ID
+// ============================
 router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -82,7 +111,7 @@ router.get("/:id", async (req, res) => {
 
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.error("Get user by id error:", err.message);
     res.status(500).send("Server error");
   }
 });
